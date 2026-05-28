@@ -153,7 +153,7 @@ async def csrf_middleware(request: Request, call_next):
 
 ---
 
-### TASK-004 `[BE]` MongoDB models + Beanie init
+### TASK-004 `[BE]` MongoDB models + Beanie init ✅
 
 **Mô tả:** Tạo Beanie Document models cho 6 collections. Init Beanie khi FastAPI startup. Seed province risk data cho 64 tỉnh.
 
