@@ -82,7 +82,7 @@ services:
 
 ---
 
-### TASK-003 `[BE]` FastAPI skeleton + health check
+### TASK-003 `[BE]` FastAPI skeleton + health check ✅
 
 **Mô tả:** Init FastAPI app với CORS, routers structure, và health check endpoint. Server chạy tại `localhost:8000`. Setup ngay 3 middleware quan trọng: Request ID, CSRF Protection, Rate Limiting.
 
