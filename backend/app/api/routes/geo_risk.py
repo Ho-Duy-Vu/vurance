@@ -43,7 +43,7 @@ def _serialize(doc: GeoRisk) -> dict:
 @router.get("/map")
 async def get_map_data() -> list[dict]:
     """Return risk data for all provinces — used by Leaflet choropleth."""
-    docs = await GeoRisk.find_all().to_list()
+    docs = await GeoRisk.find({}).to_list()
     return [_serialize(d) for d in docs]
 
 

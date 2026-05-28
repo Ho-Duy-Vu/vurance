@@ -3,10 +3,13 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { AlertTriangle, CheckCircle, Info, Shield } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Info, Loader2, Shield, WifiOff } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { GeoRisk } from '@/types';
 import api from '@/lib/api';
+
+const GEOJSON_URL =
+  'https://raw.githubusercontent.com/highcharts/map-collection-dist/master/countries/vn/vn-all.geo.json';
 
 const LeafletMap = dynamic(() => import('@/components/risk-map/LeafletMap'), {
   ssr: false,
@@ -14,45 +17,129 @@ const LeafletMap = dynamic(() => import('@/components/risk-map/LeafletMap'), {
 });
 
 function RiskBadge({ score }: { score: number }) {
-  if (score >= 80) return <span className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-red-600 px-2 py-0.5 rounded-full"><AlertTriangle size={11} /> Rất cao</span>;
-  if (score >= 60) return <span className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-orange-500 px-2 py-0.5 rounded-full"><AlertTriangle size={11} /> Cao</span>;
-  if (score >= 40) return <span className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-yellow-500 px-2 py-0.5 rounded-full"><Info size={11} /> Trung bình</span>;
-  return <span className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-green-600 px-2 py-0.5 rounded-full"><CheckCircle size={11} /> Thấp</span>;
+  if (score >= 80)
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-red-600 px-2 py-0.5 rounded-full">
+        <AlertTriangle size={11} /> Rất cao
+      </span>
+    );
+  if (score >= 60)
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-orange-500 px-2 py-0.5 rounded-full">
+        <AlertTriangle size={11} /> Cao
+      </span>
+    );
+  if (score >= 40)
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-yellow-500 px-2 py-0.5 rounded-full">
+        <Info size={11} /> Trung bình
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-green-600 px-2 py-0.5 rounded-full">
+      <CheckCircle size={11} /> Thấp
+    </span>
+  );
 }
+
+type LoadStatus = 'loading' | 'error' | 'ready';
 
 export function RiskMapClient() {
   const t = useTranslations('geo');
-  const [riskData, setRiskData] = useState<GeoRisk[]>([]);
-  const [selected, setSelected] = useState<GeoRisk | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [apiError, setApiError] = useState('');
 
+  const [riskData, setRiskData] = useState<GeoRisk[]>([]);
+  const [geoJson, setGeoJson] = useState<GeoJSON.FeatureCollection | null>(null);
+  const [selected, setSelected] = useState<GeoRisk | null>(null);
+
+  const [riskStatus, setRiskStatus] = useState<LoadStatus>('loading');
+  const [geoStatus, setGeoStatus] = useState<LoadStatus>('loading');
+  const [riskError, setRiskError] = useState('');
+  const [geoError, setGeoError] = useState('');
+
+  // Fetch risk data from backend
   useEffect(() => {
-    api.get('/geo-risk/map')
-      .then((r) => setRiskData(r.data))
-      .catch((err) => {
-        console.error('API error:', err);
-        setApiError('Không kết nối được API backend. Hãy chạy: uvicorn app.main:app --reload');
+    api
+      .get('/geo-risk/map')
+      .then((r) => {
+        setRiskData(r.data);
+        setRiskStatus('ready');
       })
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        const status = err?.response?.status;
+        setRiskError(
+          status
+            ? `API lỗi ${status}`
+            : 'Không kết nối được backend — hãy chạy: uvicorn app.main:app --reload'
+        );
+        setRiskStatus('error');
+      });
   }, []);
 
-  if (apiError) {
-    return (
-      <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
-        {apiError}
-      </div>
-    );
-  }
+  // Fetch GeoJSON (done here so it's ready at same time as risk data)
+  useEffect(() => {
+    fetch(GEOJSON_URL)
+      .then((r) => {
+        if (!r.ok) throw new Error(`GeoJSON ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        setGeoJson(data);
+        setGeoStatus('ready');
+      })
+      .catch((err) => {
+        setGeoError(`Không tải được bản đồ tỉnh: ${err.message}`);
+        setGeoStatus('error');
+      });
+  }, []);
+
+  const isLoading = riskStatus === 'loading' || geoStatus === 'loading';
+  const hasError = riskStatus === 'error' || geoStatus === 'error';
 
   return (
     <div className="flex gap-4 flex-1" style={{ minHeight: 520 }}>
       {/* Map */}
-      <div className="flex-1 bg-white rounded-xl shadow-sm border overflow-hidden">
-        {loading ? (
-          <Skeleton className="h-full w-full" />
-        ) : (
-          <LeafletMap riskData={riskData} onProvinceClick={setSelected} />
+      <div className="flex-1 bg-white rounded-xl shadow-sm border overflow-hidden relative">
+        {/* Status bar */}
+        <div className="absolute top-2 left-2 z-[1000] flex flex-col gap-1">
+          <StatusChip
+            label={`Risk data: ${riskData.length} tỉnh`}
+            status={riskStatus}
+            error={riskError}
+          />
+          <StatusChip
+            label="GeoJSON bản đồ"
+            status={geoStatus}
+            error={geoError}
+          />
+        </div>
+
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-[999]">
+            <div className="flex flex-col items-center gap-2 text-gray-500">
+              <Loader2 className="animate-spin" size={28} />
+              <span className="text-sm">Đang tải dữ liệu…</span>
+            </div>
+          </div>
+        )}
+
+        {!isLoading && hasError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/90 z-[999] p-6">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-5 max-w-sm text-center">
+              <WifiOff className="mx-auto mb-3 text-red-400" size={32} />
+              <p className="text-red-700 font-semibold text-sm mb-2">Không thể hiển thị bản đồ</p>
+              {riskError && <p className="text-red-500 text-xs mb-1">{riskError}</p>}
+              {geoError && <p className="text-red-500 text-xs">{geoError}</p>}
+            </div>
+          </div>
+        )}
+
+        {/* Only render Leaflet when both datasets are ready */}
+        {riskStatus === 'ready' && geoStatus === 'ready' && geoJson && (
+          <LeafletMap
+            riskData={riskData}
+            geoJson={geoJson}
+            onProvinceClick={setSelected}
+          />
         )}
       </div>
 
@@ -60,14 +147,16 @@ export function RiskMapClient() {
       <div className="w-72 shrink-0 flex flex-col gap-3">
         {/* Legend */}
         <div className="bg-white rounded-xl shadow-sm border p-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Chú thích</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            Chú thích
+          </p>
           {[
             { color: 'bg-green-600', label: t('lowRisk'), range: '0–39' },
             { color: 'bg-yellow-500', label: t('mediumRisk'), range: '40–59' },
-            { color: 'bg-orange-500', label: t('highRisk') + ' (cao)', range: '60–79' },
-            { color: 'bg-red-600', label: t('highRisk') + ' (rất cao)', range: '80–100' },
+            { color: 'bg-orange-500', label: 'Cao', range: '60–79' },
+            { color: 'bg-red-600', label: t('highRisk'), range: '80–100' },
           ].map((item) => (
-            <div key={item.label} className="flex items-center gap-2 mb-1.5">
+            <div key={item.range} className="flex items-center gap-2 mb-1.5">
               <span className={`w-3 h-3 rounded-sm ${item.color}`} />
               <span className="text-xs text-gray-600">{item.label}</span>
               <span className="text-xs text-gray-400 ml-auto">{item.range}</span>
@@ -90,19 +179,26 @@ export function RiskMapClient() {
                   style={{
                     width: `${selected.overall_risk_score}%`,
                     backgroundColor:
-                      selected.overall_risk_score >= 80 ? '#dc2626'
-                      : selected.overall_risk_score >= 60 ? '#ea580c'
-                      : selected.overall_risk_score >= 40 ? '#ca8a04'
-                      : '#16a34a',
+                      selected.overall_risk_score >= 80
+                        ? '#dc2626'
+                        : selected.overall_risk_score >= 60
+                          ? '#ea580c'
+                          : selected.overall_risk_score >= 40
+                            ? '#ca8a04'
+                            : '#16a34a',
                   }}
                 />
               </div>
-              <span className="text-sm font-bold text-gray-700">{selected.overall_risk_score}</span>
+              <span className="text-sm font-bold text-gray-700">
+                {selected.overall_risk_score}
+              </span>
             </div>
 
             {selected.disaster_risks.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Thiên tai</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  Thiên tai
+                </p>
                 <div className="space-y-1">
                   {selected.disaster_risks.map((d) => (
                     <div key={d.type} className="flex items-center justify-between text-xs">
@@ -137,6 +233,34 @@ export function RiskMapClient() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function StatusChip({
+  label,
+  status,
+  error,
+}: {
+  label: string;
+  status: LoadStatus;
+  error: string;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full shadow-sm font-medium ${
+        status === 'loading'
+          ? 'bg-white text-gray-500'
+          : status === 'error'
+            ? 'bg-red-100 text-red-600'
+            : 'bg-green-100 text-green-700'
+      }`}
+      title={error || label}
+    >
+      {status === 'loading' && <Loader2 size={10} className="animate-spin" />}
+      {status === 'error' && <AlertTriangle size={10} />}
+      {status === 'ready' && <CheckCircle size={10} />}
+      {label}
     </div>
   );
 }
