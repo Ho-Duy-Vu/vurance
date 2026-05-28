@@ -175,7 +175,7 @@ HIGH_RISK_PROVINCES = [
 
 ---
 
-### TASK-005 `[BE]` Auth: JWT httpOnly Cookie
+### TASK-005 `[BE]` Auth: JWT httpOnly Cookie ✅
 
 **Mô tả:** Register, login, logout với JWT lưu trong httpOnly cookie. Password validation: min 8 ký tự, chữ hoa + thường + số. bcrypt cost=12. JWT expire 7 ngày.
 
