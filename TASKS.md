@@ -419,7 +419,7 @@ def merge_documents(docs: list[dict]) -> tuple[dict, dict]:
 
 ---
 
-### TASK-011 `[BE]` Geo Risk Engine
+### TASK-011 `[BE]` Geo Risk Engine ✅
 
 **Mô tả:** Service tính risk score cho từng tỉnh, nhận diện vùng miền từ địa chỉ, generate insurance recommendations.
 
@@ -459,7 +459,7 @@ def calculate_risk_score(province: str) -> int:
 
 ---
 
-### TASK-013 `[FE]` Risk Map với Leaflet
+### TASK-013 `[FE]` Risk Map với Leaflet ✅
 
 **Mô tả:** Bản đồ tương tác Việt Nam hiển thị risk score theo tỉnh bằng choropleth (màu sắc theo mức độ rủi ro). Click vào tỉnh → hiển thị risk detail panel.
 

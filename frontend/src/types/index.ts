@@ -44,6 +44,7 @@ export interface GeoRisk {
   region: 'north' | 'central' | 'south';
   overall_risk_score: number;
   is_high_risk: boolean;
+  risk_factors: string[];
   disaster_risks: Array<{
     type: string;
     risk_score: number;
