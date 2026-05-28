@@ -30,7 +30,7 @@ git init && git add . && git commit -m "chore: init claimflow project"
 
 ---
 
-### TASK-002 `[INFRA]` Docker Compose — 5 services
+### TASK-002 `[INFRA]` Docker Compose — 5 services ✅
 
 **Mô tả:** Viết `docker-compose.yml` khởi động MongoDB, Redis, Qdrant, MinIO, và thêm mongo-express để xem data trong browser.
 
