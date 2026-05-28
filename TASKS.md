@@ -317,7 +317,7 @@ api.interceptors.request.use((config) => {
 
 ---
 
-### TASK-008 `[FE]` Login/Register UI
+### TASK-008 `[FE]` Login/Register UI ✅
 
 **Mô tả:** Trang login và register hoàn chỉnh. Form validation client-side. Kết nối API thật. Sau login redirect về dashboard.
 
