@@ -3,6 +3,7 @@ from typing import Literal
 
 from beanie import Document
 from pydantic import Field
+from pymongo import ASCENDING, DESCENDING, IndexModel
 
 
 class AuditLog(Document):
@@ -22,8 +23,8 @@ class AuditLog(Document):
     class Settings:
         name = "audit_logs"
         indexes = [
-            ("actor_id", 1),
-            ("action", 1),
-            ("timestamp", -1),
-            ("target_type", 1),
+            IndexModel([("actor_id", ASCENDING)]),
+            IndexModel([("action", ASCENDING)]),
+            IndexModel([("timestamp", DESCENDING)]),
+            IndexModel([("target_type", ASCENDING)]),
         ]

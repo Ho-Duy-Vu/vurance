@@ -3,6 +3,7 @@ from typing import Literal
 
 from beanie import Document, Indexed
 from pydantic import EmailStr, Field
+from pymongo import IndexModel, ASCENDING
 
 
 class User(Document):
@@ -18,4 +19,8 @@ class User(Document):
 
     class Settings:
         name = "users"
-        indexes = [("role", 1), ("province", 1), ("is_active", 1)]
+        indexes = [
+            IndexModel([("role", ASCENDING)]),
+            IndexModel([("province", ASCENDING)]),
+            IndexModel([("is_active", ASCENDING)]),
+        ]

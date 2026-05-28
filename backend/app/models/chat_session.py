@@ -3,6 +3,7 @@ from typing import Literal
 
 from beanie import Document
 from pydantic import BaseModel, Field
+from pymongo import ASCENDING, DESCENDING, IndexModel
 
 
 class ChatMessage(BaseModel):
@@ -29,4 +30,7 @@ class ChatSession(Document):
 
     class Settings:
         name = "chat_sessions"
-        indexes = [("user_id", 1), ("updated_at", -1)]
+        indexes = [
+            IndexModel([("user_id", ASCENDING)]),
+            IndexModel([("updated_at", DESCENDING)]),
+        ]

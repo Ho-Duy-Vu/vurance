@@ -2,6 +2,7 @@ from datetime import datetime
 
 from beanie import Document
 from pydantic import Field
+from pymongo import IndexModel, ASCENDING
 
 
 class Policy(Document):
@@ -17,4 +18,7 @@ class Policy(Document):
 
     class Settings:
         name = "policies"
-        indexes = [("category", 1), ("is_active", 1)]
+        indexes = [
+            IndexModel([("category", ASCENDING)]),
+            IndexModel([("is_active", ASCENDING)]),
+        ]

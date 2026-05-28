@@ -3,6 +3,7 @@ from typing import Literal
 
 from beanie import Document
 from pydantic import Field
+from pymongo import ASCENDING, DESCENDING, IndexModel
 
 from app.models.document import DocumentEmbed
 
@@ -36,8 +37,8 @@ class Claim(Document):
     class Settings:
         name = "claims"
         indexes = [
-            ("user_id", 1),
-            ("status", 1),
-            ("province", 1),
-            ("created_at", -1),
+            IndexModel([("user_id", ASCENDING)]),
+            IndexModel([("status", ASCENDING)]),
+            IndexModel([("province", ASCENDING)]),
+            IndexModel([("created_at", DESCENDING)]),
         ]

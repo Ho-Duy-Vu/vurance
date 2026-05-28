@@ -3,6 +3,7 @@ from typing import Literal
 
 from beanie import Document
 from pydantic import BaseModel, Field
+from pymongo import IndexModel, ASCENDING
 
 
 class DisasterRisk(BaseModel):
@@ -35,8 +36,8 @@ class GeoRisk(Document):
     class Settings:
         name = "geo_risks"
         indexes = [
-            ("province_name", 1),
-            ("province_code", 1),
-            ("region", 1),
-            ("is_high_risk", 1),
+            IndexModel([("province_name", ASCENDING)]),
+            IndexModel([("province_code", ASCENDING)]),
+            IndexModel([("region", ASCENDING)]),
+            IndexModel([("is_high_risk", ASCENDING)]),
         ]

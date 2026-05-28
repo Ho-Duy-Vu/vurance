@@ -3,6 +3,7 @@ from typing import Literal
 
 from beanie import Document
 from pydantic import BaseModel, Field
+from pymongo import IndexModel, ASCENDING
 
 
 class ExtractedField(BaseModel):
@@ -56,8 +57,8 @@ class Document(Document):
     class Settings:
         name = "documents"
         indexes = [
-            ("user_id", 1),
-            ("doc_type", 1),
-            ("processing_status", 1),
-            ("file_hash", 1),
+            IndexModel([("user_id", ASCENDING)]),
+            IndexModel([("doc_type", ASCENDING)]),
+            IndexModel([("processing_status", ASCENDING)]),
+            IndexModel([("file_hash", ASCENDING)]),
         ]
