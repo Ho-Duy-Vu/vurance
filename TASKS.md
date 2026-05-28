@@ -202,7 +202,7 @@ HIGH_RISK_PROVINCES = [
 
 ---
 
-### TASK-007 `[FE]` Next.js setup + Leaflet-safe config + Security
+### TASK-007 `[FE]` Next.js setup + Leaflet-safe config + Security ✅
 
 **Mô tả:** Init Next.js 14 + TypeScript + Tailwind + shadcn/ui. Cấu hình Leaflet không bị SSR error. Setup axios với cookie auth + CSRF token interceptor. Tạo ErrorBoundary component và Loading Skeleton template.
 
@@ -216,7 +216,7 @@ HIGH_RISK_PROVINCES = [
 
 ---
 
-### TASK-007b `[FE]` i18n — Bilingual UI (EN / VI)
+### TASK-007b `[FE]` i18n — Bilingual UI (EN / VI) ✅
 
 **Mô tả:** Tích hợp `next-intl` vào Next.js 14 App Router. Toàn bộ chuỗi UI có bản dịch EN + VI. Toggle ngôn ngữ không reload trang. URL-based locale.
 
