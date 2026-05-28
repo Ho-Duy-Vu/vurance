@@ -393,7 +393,7 @@ print(response.text)
 
 ---
 
-### TASK-010 `[AI]` Document Merge Logic
+### TASK-010 `[AI]` Document Merge Logic ✅
 
 **Mô tả:** Service merge nhiều document đã OCR thành 1 hồ sơ duy nhất. Loại bỏ field trùng lặp. Phát hiện conflict khi cùng field có 2 giá trị khác nhau.
 

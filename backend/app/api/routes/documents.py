@@ -188,3 +188,19 @@ async def export_document(
         return {"format": "markdown", "content": "\n".join(lines)}
 
     return {"format": "json", "content": json.dumps(doc.structured_data, ensure_ascii=False, indent=2)}
+
+
+@router.post("/merge", status_code=201)
+async def merge_documents(
+    body: dict,
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    from app.services.ai.merger import merger_service
+    doc_ids: list[str] = body.get("document_ids", [])
+    if len(doc_ids) < 2:
+        raise HTTPException(400, "Provide at least 2 document_ids")
+    try:
+        result = await merger_service.merge(doc_ids, str(current_user.id))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return result
