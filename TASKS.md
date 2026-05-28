@@ -13,7 +13,7 @@
 
 ---
 
-### TASK-001 `[SETUP]` Init GitHub repo ClaimFlow
+### TASK-001 `[SETUP]` Init GitHub repo ClaimFlow ✅
 
 **Mô tả:** Tạo repo `claimflow`, init folder structure, copy toàn bộ `.md` docs vào root, tạo `.gitignore` và `.env.example`, commit đầu tiên.
 
