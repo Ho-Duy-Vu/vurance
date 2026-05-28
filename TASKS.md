@@ -189,7 +189,7 @@ HIGH_RISK_PROVINCES = [
 
 ---
 
-### TASK-006 `[BE]` File upload → MinIO
+### TASK-006 `[BE]` File upload → MinIO ✅
 
 **Mô tả:** Endpoint upload file PDF/JPG/PNG lên MinIO. Validate type và size (max 20MB). Trả về `document_id` và presigned URL.
 
