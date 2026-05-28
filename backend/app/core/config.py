@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
 
     # MongoDB
-    MONGODB_URL: str = "mongodb://admin:admin@localhost:27017"
+    MONGODB_URL: str = "mongodb://admin:admin@localhost:27017/?authSource=admin"
     MONGODB_DB_NAME: str = "claimflow_db"
 
     # Redis
