@@ -1,0 +1,239 @@
+# CLAUDE.md — ClaimFlow
+
+> File này giúp Claude hiểu toàn bộ context dự án. Đọc trước khi bắt đầu bất kỳ task nào.
+
+---
+
+## Dự án là gì
+
+**ClaimFlow** — Nền tảng insurtech tích hợp AI cho thị trường Việt Nam gồm 3 core module:
+1. **Document Intelligence** — OCR CCCD/hợp đồng bảo hiểm bằng Gemini Vision, merge nhiều tài liệu
+2. **Geo Risk Intelligence** — Phân tích rủi ro thiên tai theo tỉnh/vùng miền, bản đồ Leaflet
+3. **AI Chatbot** — Tư vấn bảo hiểm 24/7, bảo vệ PII, tư vấn theo vùng miền
+
+**Domain:** Insurtech — CoverGo
+**Developer:** Hồ Duy Vũ — AI Engineer Intern
+
+---
+
+## Tech Stack
+
+```
+Frontend:  Next.js 14 + TypeScript + Tailwind + shadcn/ui + Leaflet
+Backend:   FastAPI (Python 3.11) + Beanie ODM + Celery
+AI:        Gemini Vision (OCR) + Gemini Pro (LLM) + text-embedding-004
+           LangGraph + LangChain + Qdrant (vector store)
+Queue:     Redis + Celery
+DB:        MongoDB 7.0 (Motor + Beanie)
+Storage:   MinIO (dev) / AWS S3 (prod)
+Infra:     Docker Compose
+```
+
+---
+
+## Cấu trúc thư mục quan trọng
+
+```
+backend/app/
+├── api/routes/      auth · documents · geo_risk · chatbot · claims · analytics
+├── core/            config · security (JWT+bcrypt) · database (MongoDB)
+├── models/          user · document · claim · geo_risk
+├── services/
+│   ├── ai/          agent · nodes · rag · ocr · merger · chatbot
+│   └── geo/         province_data · risk_engine
+└── tasks/           document_processor (Celery)
+
+frontend/src/
+├── app/             (auth) · dashboard · documents · risk-map · claims · analytics
+└── components/      documents · risk-map · chatbot (floating widget) · ui
+```
+
+---
+
+## Nguyên tắc làm việc với Claude
+
+### Backend
+- Luôn `async/await` — FastAPI là async
+- Pydantic schema cho mọi request/response
+- HTTPException với detail rõ ràng
+- Logging thay vì print()
+- bcrypt cost=12, JWT expire=10080 phút (7 ngày)
+- Token lưu httpOnly cookie — KHÔNG localStorage
+- **CSRF middleware** bắt buộc cho POST/PUT/DELETE/PATCH
+- **Rate limiting** per endpoint với slowapi
+- **Request ID** prefix mọi log để trace bug
+- **Input sanitization** trước khi xử lý — strip HTML, check injection patterns
+- **OCR cache** bằng MD5 file hash — cùng file không gọi Gemini 2 lần
+- **Confidence threshold** 0.7 cho OCR — dưới ngưỡng thì flag manual review
+
+### Frontend
+- `'use client'` khi cần state/effect
+- Server Component là default
+- shadcn/ui thay vì tự viết component
+- TypeScript strict — không dùng `any`
+- Leaflet lazy load (SSR safe) — dynamic import, ssr:false
+- **Error Boundary** bọc mọi component có thể crash (map, OCR display)
+- **Loading skeleton** thay vì blank screen khi đang fetch
+- **CSRF token** attach vào header mọi mutating request
+- Simplified GeoJSON (< 500KB) — không dùng full resolution
+
+### AI / LangGraph
+- State là TypedDict đầy đủ type
+- Mỗi node là pure function
+- Gemini Vision cho OCR, Gemini Pro cho chatbot/reasoning
+- Model: `gemini-1.5-flash` (OCR), `gemini-1.5-pro` (chatbot)
+- Embedding: `text-embedding-004`
+- **Confidence threshold** 0.7 — retry với enhanced prompt nếu thấp hơn
+- Chatbot KHÔNG tiết lộ: CCCD number, địa chỉ chi tiết, SĐT
+- **Prompt injection defense** — sanitize user input trước khi vào Gemini
+- Privacy system prompt kết thúc bằng reinforcement statement
+
+### Database (MongoDB + Beanie)
+- Xem SCHEMA.md trước khi viết query
+- Không có migration — thêm field vào model là xong
+- ID luôn là string khi expose qua API
+- ChatSession giữ tối đa 50 messages — tránh 16MB document limit
+- Document model có `file_hash` cho OCR cache
+- Document model có `edit_history` cho version tracking
+
+---
+
+## Environment Variables
+
+```env
+GEMINI_API_KEY=AIza...
+MONGODB_URL=mongodb://admin:admin@localhost:27017
+MONGODB_DB_NAME=claimflow_db
+REDIS_URL=redis://localhost:6379
+SECRET_KEY=change-this-in-production
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
+AWS_ACCESS_KEY_ID=minioadmin
+AWS_SECRET_ACCESS_KEY=minioadmin
+AWS_BUCKET_NAME=claimflow-documents
+S3_ENDPOINT_URL=http://localhost:9000
+QDRANT_URL=http://localhost:6333
+RESEND_API_KEY=re_...
+```
+
+---
+
+## Authorization — 3 Roles
+
+| Role | Quyền |
+|------|-------|
+| **user** | Tài liệu + claims của mình, chatbot, geo risk map |
+| **reviewer** | Tất cả claims, override AI decision, reviewer queue & stats |
+| **admin** | Tất cả + user management, policy management, audit logs, system health |
+
+**Dependency Injection:**
+- `get_current_user` — mọi protected route
+- `require_reviewer` — role reviewer hoặc admin
+- `require_admin` — role admin only
+
+**Audit Log:** Mọi action admin (role_change, user_deactivate, policy_upload...) phải ghi `AuditLog`. Không bỏ qua.
+
+---
+
+## Collections MongoDB (tóm tắt)
+
+```
+users        → auth, role (user/reviewer/admin)
+documents    → OCR result, extracted_data, merged_data, file_key, file_hash
+claims       → status, ai_decision, fraud_score, documents (embedded)
+geo_risks    → province, risk_scores, disaster_types, recommendations
+chat_sessions→ user_id, messages[] (max 50), context
+policies     → RAG source (ingested vào Qdrant)
+audit_logs   → mọi action admin: role_change, policy_upload, claim_override...
+```
+
+---
+
+## API Endpoints tóm tắt
+
+```
+POST  /auth/register · /auth/login · GET /auth/me
+
+POST  /documents/upload          Upload + OCR (Gemini Vision)
+POST  /documents/merge           Merge nhiều docs, loại bỏ field trùng
+GET   /documents/{id}            Chi tiết + extracted data
+PUT   /documents/{id}/fields     Chỉnh sửa field đã extract
+GET   /documents/{id}/export     Export JSON hoặc Markdown
+
+GET   /geo-risk/province/{name}  Risk score + disaster types
+GET   /geo-risk/map              All provinces risk data cho Leaflet
+POST  /geo-risk/recommend        Insurance recommendation từ địa chỉ
+
+POST  /chatbot/message           Gửi message, nhận AI response
+GET   /chatbot/session/{id}      Lịch sử conversation
+DELETE/chatbot/session/{id}      Xóa session
+
+POST  /claims/submit             Submit claim (file + metadata)
+GET   /claims · /claims/{id}
+PATCH /claims/{id}/review        Reviewer override
+
+GET   /analytics/summary · /analytics/daily
+
+WS    /ws/{claim_id}             Real-time status
+
+# Reviewer only (role: reviewer | admin)
+GET   /reviewer/queue            Claims cần review (manual_review)
+GET   /reviewer/stats            Stats cá nhân reviewer
+
+# Admin only (role: admin)
+GET   /admin/users               Danh sách tất cả users
+PATCH /admin/users/{id}/role     Đổi role user
+PATCH /admin/users/{id}/status   Activate/deactivate user
+GET   /admin/policies            Danh sách policy documents
+POST  /admin/policies            Upload policy mới → ingest Qdrant
+DELETE/admin/policies/{id}       Deactivate + xóa vectors
+GET   /admin/audit-logs          History mọi action quan trọng
+GET   /admin/system/health       Status MongoDB, Redis, Qdrant, Celery
+GET   /admin/analytics/full      Full system analytics
+```
+
+---
+
+## Những thứ Claude KHÔNG nên làm
+
+- Không dùng localStorage cho JWT token — dùng httpOnly cookie
+- Không tiết lộ PII trong chatbot (CCCD, SĐT, địa chỉ chi tiết)
+- Không hardcode API key hay secret
+- Không bỏ qua type hints Python
+- Không dùng `any` trong TypeScript
+- Không gọi Gemini Pro khi Gemini Flash đủ dùng (tiết kiệm quota)
+- Không import Leaflet ở Server Component (SSR không hỗ trợ)
+
+---
+
+## Cách tôi muốn Claude trả lời
+
+1. Code trước, giải thích sau
+2. Chỉ file cần sửa — không paste lại toàn bộ
+3. Luôn include import
+4. Nói rõ nếu cần xem thêm file context
+5. Assumption hợp lý và note rõ
+
+---
+
+## Lệnh hay dùng
+
+```bash
+docker compose up -d
+cd backend && uvicorn app.main:app --reload
+cd backend && celery -A app.tasks worker --loglevel=info
+cd frontend && npm run dev
+
+python scripts/seed.py
+python scripts/ingest_policies.py
+python scripts/generate_sample_pdfs.py
+
+pytest tests/ -v
+pytest --cov=app/services tests/
+docker compose exec mongodb mongosh claimflow_db
+```
+
+---
+
+## Task hiện tại
+
+Xem TASKS.md. Khi bắt đầu task mới: `"Bắt đầu TASK-XXX"`

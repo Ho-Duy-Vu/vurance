@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+.next/
+out/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.docker/
+
+# Data / uploads (never commit)
+uploads/
+*.pdf
+*.jpg
+*.jpeg
+*.png
+sample_data/policies/*.txt
+sample_data/policies/*.pdf
+
+# Logs
+*.log
+logs/
+
+# MinIO data
+minio_data/
+
+# MongoDB data
+mongodb_data/
+
+# Qdrant data
+qdrant_data/
