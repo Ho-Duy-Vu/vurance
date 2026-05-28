@@ -214,6 +214,87 @@ HIGH_RISK_PROVINCES = [
 - `ErrorBoundary` component sẵn dùng
 - `OCRProcessing` skeleton component sẵn dùng
 
+---
+
+### TASK-007b `[FE]` i18n — Bilingual UI (EN / VI)
+
+**Mô tả:** Tích hợp `next-intl` vào Next.js 14 App Router. Toàn bộ chuỗi UI có bản dịch EN + VI. Toggle ngôn ngữ không reload trang. URL-based locale.
+
+**Output:**
+- `npm install next-intl`
+- URL `/vi/dashboard` hiển thị tiếng Việt, `/en/dashboard` hiển thị tiếng Anh
+- `middleware.ts` tự detect và redirect về locale mặc định `vi`
+- `LanguageSwitcher` component trong header — click toggle EN ↔ VI
+- `messages/vi.json` + `messages/en.json` — đầy đủ keys cho tất cả trang
+- Server Components dùng `getTranslations()`, Client Components dùng `useTranslations()`
+- KHÔNG hardcode bất kỳ chuỗi UI nào — mọi text đều qua translation key
+
+**Cấu trúc messages:**
+```json
+{
+  "common":    { "loading", "error", "save", "cancel", "confirm", "back" },
+  "nav":       { "dashboard", "documents", "riskMap", "claims", "analytics", "chatbot" },
+  "auth":      { "login", "register", "logout", "email", "password", "fullName", "province" },
+  "documents": { "upload", "ocr", "merge", "export", "confidence", "needsReview" },
+  "claims":    { "submit", "status": { "pending", "approved", "rejected", "manualReview" } },
+  "geo":       { "riskMap", "riskScore", "highRisk", "recommendations", "disasterTypes" },
+  "chatbot":   { "placeholder", "typing", "clearSession", "suggestedActions" },
+  "admin":     { "users", "policies", "auditLogs", "systemHealth", "analytics" },
+  "errors":    { "unauthorized", "forbidden", "notFound", "serverError", "rateLimited" }
+}
+```
+
+**Key files:**
+```typescript
+// frontend/src/i18n.ts
+import { getRequestConfig } from 'next-intl/server';
+export default getRequestConfig(async ({ locale }) => ({
+  messages: (await import(`./messages/${locale}.json`)).default,
+}));
+
+// frontend/src/middleware.ts
+import createMiddleware from 'next-intl/middleware';
+export default createMiddleware({
+  locales: ['vi', 'en'],
+  defaultLocale: 'vi',
+});
+export const config = { matcher: ['/((?!api|_next|.*\\..*).*)'] };
+
+// Usage in Server Component
+const t = await getTranslations('nav');
+<span>{t('dashboard')}</span>
+
+// Usage in Client Component
+'use client';
+const t = useTranslations('auth');
+<button>{t('login')}</button>
+```
+
+**LanguageSwitcher:**
+```typescript
+// components/layout/LanguageSwitcher.tsx
+'use client';
+import { useLocale } from 'next-intl';
+import { useRouter, usePathname } from 'next/navigation';
+
+export function LanguageSwitcher() {
+  const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const toggle = () => {
+    const next = locale === 'vi' ? 'en' : 'vi';
+    router.replace(pathname.replace(`/${locale}`, `/${next}`));
+  };
+
+  return (
+    <button onClick={toggle} className="text-sm font-medium px-2 py-1 rounded border">
+      {locale === 'vi' ? '🇻🇳 VI' : '🇺🇸 EN'}
+    </button>
+  );
+}
+```
+
 ```typescript
 // Leaflet SSR fix
 const LeafletMap = dynamic(() => import('@/components/risk-map/LeafletMap'), {

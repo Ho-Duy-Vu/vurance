@@ -296,6 +296,41 @@ Layer 2: System prompt kết thúc bằng reinforcement:
 
 ---
 
+## Quyết định 13: next-intl cho Bilingual UI (EN / VI)
+
+**Vấn đề:**
+ClaimFlow phục vụ thị trường Việt Nam nhưng cần hỗ trợ tiếng Anh để:
+- Demo cho mentor / interviewer quốc tế dễ hiểu hơn
+- CoverGo là công ty đa quốc gia — có thể expand thị trường
+
+**Tại sao next-intl thay vì các lựa chọn khác:**
+
+| Thư viện | Vấn đề với Next.js 14 App Router |
+|---|---|
+| `react-i18next` | Không native với App Router, cần workaround phức tạp |
+| `next-i18next` | Chỉ hỗ trợ Pages Router, không App Router |
+| `next-intl` | ✅ Native App Router — Server + Client Component đều hỗ trợ |
+
+**Thiết kế URL-based locale:**
+```
+/vi/dashboard  → tiếng Việt (default)
+/en/dashboard  → tiếng Anh
+```
+
+- SEO-friendly — mỗi locale có URL riêng
+- Middleware tự detect Accept-Language header và redirect về locale phù hợp
+- Không cần cookie để lưu preference — URL là source of truth
+
+**Trade-off:**
+URL thay đổi khi switch ngôn ngữ. Chấp nhận được vì đây là behavior chuẩn của i18n web apps.
+
+**File messages tổ chức theo namespace** — mỗi feature có section riêng trong `vi.json` / `en.json`:
+```
+common · nav · auth · documents · claims · geo · chatbot · admin · errors
+```
+
+---
+
 ## V1 → V2 Scale Path
 
 | Component | V1 (Demo) | V2 (Scale) |

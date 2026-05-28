@@ -1,0 +1,143 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "search": "Search",
+    "submit": "Submit",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "export": "Export",
+    "upload": "Upload",
+    "download": "Download",
+    "refresh": "Refresh",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "documents": "Documents",
+    "riskMap": "Risk Map",
+    "claims": "Claims",
+    "analytics": "Analytics",
+    "chatbot": "AI Advisor",
+    "admin": "Admin",
+    "reviewer": "Review Queue"
+  },
+  "auth": {
+    "login": "Log In",
+    "register": "Sign Up",
+    "logout": "Log Out",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full Name",
+    "province": "Province / City",
+    "loginTitle": "Sign in to ClaimFlow",
+    "registerTitle": "Create a new account",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "weakPassword": "Password must be at least 8 characters with uppercase, lowercase, and a number",
+    "invalidEmail": "Invalid email address",
+    "loginFailed": "Incorrect email or password",
+    "registerSuccess": "Registration successful"
+  },
+  "documents": {
+    "upload": "Upload Document",
+    "dragDrop": "Drag & drop files here or click to select",
+    "ocr": "Text Recognition (OCR)",
+    "merge": "Merge Documents",
+    "export": "Export Data",
+    "confidence": "Confidence",
+    "needsReview": "Needs Review",
+    "processing": "Processing...",
+    "done": "Done",
+    "failed": "Failed",
+    "docType": "Document Type",
+    "cccd": "National ID (CCCD)",
+    "driverLicense": "Driver's License",
+    "passport": "Passport",
+    "insurancePolicy": "Insurance Policy",
+    "vehicleRegistration": "Vehicle Registration",
+    "maxSize": "Max 20MB",
+    "unsupportedType": "Unsupported file format",
+    "fileTooLarge": "File exceeds 20MB limit"
+  },
+  "claims": {
+    "submit": "Submit Claim",
+    "claimType": "Claim Type",
+    "amountClaimed": "Amount Claimed (VND)",
+    "province": "Province where event occurred",
+    "disasterType": "Disaster Type",
+    "description": "Event Description",
+    "status": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "manualReview": "Manual Review Required"
+    },
+    "aiDecision": "AI Decision",
+    "fraudScore": "Fraud Risk Score",
+    "reasoning": "Decision Reasoning",
+    "amountApproved": "Amount Approved"
+  },
+  "geo": {
+    "riskMap": "Disaster Risk Map",
+    "riskScore": "Risk Score",
+    "highRisk": "High Risk",
+    "mediumRisk": "Medium Risk",
+    "lowRisk": "Low Risk",
+    "recommendations": "Insurance Recommendations",
+    "disasterTypes": {
+      "storm": "Storm",
+      "flood": "Flood",
+      "landslide": "Landslide",
+      "inundation": "Inundation",
+      "drought": "Drought"
+    },
+    "clickProvince": "Click a province to see details",
+    "historicalEvents": "Historical Events"
+  },
+  "chatbot": {
+    "title": "AI Insurance Advisor",
+    "placeholder": "Ask about insurance...",
+    "typing": "AI is typing...",
+    "clearSession": "Clear chat history",
+    "suggestedActions": "Suggestions",
+    "privacyNote": "Your personal information is protected"
+  },
+  "admin": {
+    "users": "User Management",
+    "policies": "Policy Documents",
+    "auditLogs": "Audit Logs",
+    "systemHealth": "System Health",
+    "analytics": "Full System Analytics",
+    "changeRole": "Change Role",
+    "deactivate": "Deactivate",
+    "activate": "Activate"
+  },
+  "reviewer": {
+    "queue": "Review Queue",
+    "stats": "My Statistics",
+    "approve": "Approve",
+    "reject": "Reject",
+    "note": "Note (required)",
+    "claimsReviewed": "Claims Reviewed",
+    "avgReviewTime": "Avg. Review Time",
+    "overrideRate": "AI Override Rate"
+  },
+  "errors": {
+    "unauthorized": "Please log in to continue",
+    "forbidden": "You do not have permission to perform this action",
+    "notFound": "Resource not found",
+    "serverError": "Server error, please try again later",
+    "rateLimited": "Too many requests, please wait and try again",
+    "csrfFailed": "Session expired, please reload the page",
+    "uploadFailed": "Upload failed, please try again"
+  }
+}

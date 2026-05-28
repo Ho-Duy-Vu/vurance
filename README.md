@@ -47,6 +47,13 @@ Dự án được xây dựng trong context của CoverGo (insurtech), tích h�
 - Human review interface cho reviewer
 - Analytics dashboard
 
+### 🌐 Bilingual UI (EN / VI)
+- Toàn bộ giao diện hỗ trợ 2 ngôn ngữ: Tiếng Việt (mặc định) và English
+- Chuyển ngôn ngữ tức thì — không reload trang
+- URL-based locale: `/vi/dashboard` · `/en/dashboard`
+- Powered by **next-intl** (Next.js 14 App Router native)
+- Tất cả labels, messages, error texts đều có bản dịch đầy đủ
+
 ---
 
 ## Tech Stack
@@ -60,6 +67,7 @@ Dự án được xây dựng trong context của CoverGo (insurtech), tích h�
 | Leaflet + React Leaflet | Bản đồ tương tác rủi ro thiên tai |
 | Recharts | Analytics charts |
 | WebSocket API | Real-time claim status |
+| next-intl | Bilingual UI — EN / VI (URL-based locale) |
 
 ### Backend
 | Công nghệ | Mục đích |
@@ -198,16 +206,23 @@ claimflow/
 │       │   ├── geo_risk.py        # Province risk analysis
 │       │   ├── chatbot.py         # AI chatbot endpoint
 │       │   ├── claims.py          # Claim processing
-│       │   └── analytics.py
+│       │   ├── analytics.py
+│       │   ├── reviewer.py
+│       │   └── admin.py
 │       ├── core/
 │       │   ├── config.py
 │       │   ├── security.py        # JWT + bcrypt
-│       │   └── database.py        # MongoDB + Beanie init
+│       │   ├── database.py        # MongoDB + Beanie init
+│       │   ├── middleware.py      # Request ID + CSRF
+│       │   └── rate_limit.py      # slowapi setup
 │       ├── models/
 │       │   ├── user.py
 │       │   ├── document.py        # OCR document model
 │       │   ├── claim.py
-│       │   └── geo_risk.py        # Province risk data
+│       │   ├── geo_risk.py        # Province risk data
+│       │   ├── chat_session.py
+│       │   ├── policy.py
+│       │   └── audit_log.py
 │       ├── schemas/
 │       ├── services/
 │       │   ├── ai/
@@ -218,8 +233,9 @@ claimflow/
 │       │   │   ├── merger.py      # Document merge logic
 │       │   │   └── chatbot.py     # Gemini Pro chatbot
 │       │   ├── geo/
-│       │   │   ├── province_data.py  # Static risk data 64 tỉnh
+│       │   │   ├── province_data.py  # Static risk data 63 tỉnh
 │       │   │   └── risk_engine.py    # Risk scoring logic
+│       │   ├── province_mapper.py    # province → region lookup
 │       │   ├── storage.py
 │       │   └── notification.py
 │       ├── tasks/
@@ -228,24 +244,34 @@ claimflow/
 ├── frontend/
 │   └── src/
 │       ├── app/
-│       │   ├── (auth)/login · register
-│       │   ├── dashboard/         # Claim list + status
-│       │   ├── documents/         # Upload + OCR UI
-│       │   ├── risk-map/          # Leaflet risk map
-│       │   ├── claims/[id]/       # Claim detail
-│       │   └── analytics/
+│       │   └── [locale]/          # next-intl locale segment
+│       │       ├── (auth)/login · register
+│       │       ├── dashboard/     # Claim list + status
+│       │       ├── documents/     # Upload + OCR UI
+│       │       ├── risk-map/      # Leaflet risk map
+│       │       ├── claims/[id]/   # Claim detail
+│       │       ├── analytics/
+│       │       ├── admin/
+│       │       └── reviewer/
 │       ├── components/
 │       │   ├── documents/         # Upload, merge, highlight
 │       │   ├── risk-map/          # Map + risk badge
 │       │   ├── chatbot/           # Floating widget
+│       │   ├── layout/
+│       │   │   └── LanguageSwitcher.tsx   # EN ↔ VI toggle
 │       │   └── ui/                # shadcn components
+│       ├── messages/
+│       │   ├── vi.json            # Vietnamese strings (default)
+│       │   └── en.json            # English strings
+│       ├── i18n.ts                # next-intl config
+│       ├── middleware.ts          # locale detection + routing
 │       ├── lib/
 │       │   ├── api.ts
 │       │   └── websocket.ts
 │       └── types/
 ├── sample_data/
 │   ├── policies/                  # Policy docs cho RAG
-│   ├── province_risk.json         # Risk data 64 tỉnh
+│   ├── province_risk.json         # Risk data 63 tỉnh
 │   └── generate_sample_pdfs.py
 ├── docker-compose.yml
 ├── .env.example

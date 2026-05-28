@@ -21,7 +21,7 @@ docs(readme): update architecture diagram
 chore(deps): upgrade langchain-google-genai to 1.0.6
 ```
 
-**Scopes:** `auth` · `ocr` · `merge` · `geo` · `chatbot` · `claims` · `agent` · `frontend` · `infra` · `db`
+**Scopes:** `auth` · `ocr` · `merge` · `geo` · `chatbot` · `claims` · `agent` · `frontend` · `infra` · `db` · `i18n`
 
 ---
 
@@ -531,3 +531,206 @@ async def send_message(...): ...
 @limiter.limit("5/minute")
 async def login(...): ...
 ```
+
+---
+
+## i18n — Bilingual UI (EN / VI)
+
+### Thư viện & cấu hình
+
+```
+next-intl v3 — chuẩn cho Next.js 14 App Router
+Locales:  vi (default), en
+URL:      /vi/dashboard, /en/dashboard
+```
+
+### File structure
+
+```
+frontend/src/
+├── messages/
+│   ├── vi.json      ← Vietnamese (default)
+│   └── en.json      ← English
+├── i18n.ts          ← getRequestConfig
+└── middleware.ts    ← locale routing
+```
+
+### Namespace & Key naming
+
+Format: `namespace.key` hoặc `namespace.nested.key`
+
+```
+common.*          loading, error, save, cancel, confirm, back, search, submit
+nav.*             dashboard, documents, riskMap, claims, analytics, chatbot, admin, reviewer
+auth.*            login, register, logout, email, password, fullName, province, weakPassword
+documents.*       upload, ocr, merge, export, confidence, needsReview, dragDrop
+claims.status.*   pending, processing, approved, rejected, manualReview
+geo.*             riskMap, riskScore, highRisk, recommendations, disasterTypes
+chatbot.*         placeholder, typing, clearSession, suggestedActions
+admin.*           users, policies, auditLogs, systemHealth, analytics
+errors.*          unauthorized, forbidden, notFound, serverError, rateLimited, csrfFailed
+```
+
+### Server Component pattern
+
+```typescript
+// app/[locale]/dashboard/page.tsx
+import { getTranslations } from 'next-intl/server';
+
+export default async function DashboardPage() {
+  const t = await getTranslations('nav');
+  return <h1>{t('dashboard')}</h1>;
+}
+```
+
+### Client Component pattern
+
+```typescript
+// components/documents/UploadButton.tsx
+'use client';
+import { useTranslations } from 'next-intl';
+
+export function UploadButton() {
+  const t = useTranslations('documents');
+  return <button>{t('upload')}</button>;
+}
+```
+
+### LanguageSwitcher
+
+```typescript
+// components/layout/LanguageSwitcher.tsx
+'use client';
+import { useLocale } from 'next-intl';
+import { useRouter, usePathname } from 'next/navigation';
+
+export function LanguageSwitcher() {
+  const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const toggle = () => {
+    const next = locale === 'vi' ? 'en' : 'vi';
+    router.replace(pathname.replace(`/${locale}`, `/${next}`));
+  };
+
+  return (
+    <button onClick={toggle} className="text-sm font-medium px-2 py-1 rounded border">
+      {locale === 'vi' ? '🇻🇳 VI' : '🇺🇸 EN'}
+    </button>
+  );
+}
+```
+
+### messages/vi.json (cấu trúc mẫu)
+
+```json
+{
+  "common": {
+    "loading": "Đang tải...",
+    "error": "Có lỗi xảy ra",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "back": "Quay lại",
+    "search": "Tìm kiếm",
+    "submit": "Gửi"
+  },
+  "nav": {
+    "dashboard": "Tổng quan",
+    "documents": "Tài liệu",
+    "riskMap": "Bản đồ rủi ro",
+    "claims": "Yêu cầu bồi thường",
+    "analytics": "Phân tích",
+    "chatbot": "Tư vấn AI"
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "register": "Đăng ký",
+    "logout": "Đăng xuất",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "fullName": "Họ và tên",
+    "province": "Tỉnh / Thành phố",
+    "weakPassword": "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, thường và số"
+  },
+  "claims": {
+    "submit": "Gửi yêu cầu",
+    "status": {
+      "pending": "Chờ xử lý",
+      "processing": "Đang xử lý",
+      "approved": "Đã duyệt",
+      "rejected": "Từ chối",
+      "manualReview": "Cần xét duyệt thủ công"
+    }
+  },
+  "errors": {
+    "unauthorized": "Vui lòng đăng nhập",
+    "forbidden": "Bạn không có quyền thực hiện thao tác này",
+    "notFound": "Không tìm thấy tài nguyên",
+    "serverError": "Lỗi máy chủ, vui lòng thử lại",
+    "rateLimited": "Quá nhiều yêu cầu, vui lòng đợi"
+  }
+}
+```
+
+### messages/en.json (cấu trúc tương tự)
+
+```json
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "search": "Search",
+    "submit": "Submit"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "documents": "Documents",
+    "riskMap": "Risk Map",
+    "claims": "Claims",
+    "analytics": "Analytics",
+    "chatbot": "AI Advisor"
+  },
+  "auth": {
+    "login": "Log In",
+    "register": "Sign Up",
+    "logout": "Log Out",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full Name",
+    "province": "Province / City",
+    "weakPassword": "Password must be at least 8 characters with uppercase, lowercase, and number"
+  },
+  "claims": {
+    "submit": "Submit Claim",
+    "status": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "manualReview": "Manual Review Required"
+    }
+  },
+  "errors": {
+    "unauthorized": "Please log in to continue",
+    "forbidden": "You do not have permission to perform this action",
+    "notFound": "Resource not found",
+    "serverError": "Server error, please try again",
+    "rateLimited": "Too many requests, please wait"
+  }
+}
+```
+
+### Quy tắc bắt buộc
+
+| ✅ Đúng | ❌ Sai |
+|---|---|
+| `t('auth.login')` | `"Đăng nhập"` hardcoded |
+| `getTranslations('nav')` trong Server Component | `useTranslations` trong Server Component |
+| `useTranslations('claims')` trong Client Component | Hardcode `"Approved"` |
+| Key kiểu `camelCase` | Key kiểu `snake_case` hoặc `kebab-case` |

@@ -20,6 +20,7 @@
 
 ```
 Frontend:  Next.js 14 + TypeScript + Tailwind + shadcn/ui + Leaflet
+           next-intl (bilingual EN/VI, URL-based locale)
 Backend:   FastAPI (Python 3.11) + Beanie ODM + Celery
 AI:        Gemini Vision (OCR) + Gemini Pro (LLM) + text-embedding-004
            LangGraph + LangChain + Qdrant (vector store)
@@ -35,17 +36,22 @@ Infra:     Docker Compose
 
 ```
 backend/app/
-├── api/routes/      auth · documents · geo_risk · chatbot · claims · analytics
-├── core/            config · security (JWT+bcrypt) · database (MongoDB)
-├── models/          user · document · claim · geo_risk
+├── api/routes/      auth · documents · geo_risk · chatbot · claims · analytics · reviewer · admin
+├── core/            config · security (JWT+bcrypt) · database (MongoDB) · middleware · rate_limit
+├── models/          user · document · claim · geo_risk · chat_session · policy · audit_log
+├── schemas/         auth · (per feature)
 ├── services/
 │   ├── ai/          agent · nodes · rag · ocr · merger · chatbot
-│   └── geo/         province_data · risk_engine
+│   ├── geo/         province_data · risk_engine
+│   └── province_mapper.py
 └── tasks/           document_processor (Celery)
 
 frontend/src/
-├── app/             (auth) · dashboard · documents · risk-map · claims · analytics
-└── components/      documents · risk-map · chatbot (floating widget) · ui
+├── app/[locale]/    (auth) · dashboard · documents · risk-map · claims · analytics · admin · reviewer
+├── components/      documents · risk-map · chatbot · layout/LanguageSwitcher · ui
+├── messages/        vi.json (default) · en.json
+├── i18n.ts          next-intl config
+└── middleware.ts    locale detection + routing
 ```
 
 ---
@@ -76,6 +82,15 @@ frontend/src/
 - **Loading skeleton** thay vì blank screen khi đang fetch
 - **CSRF token** attach vào header mọi mutating request
 - Simplified GeoJSON (< 500KB) — không dùng full resolution
+
+### i18n (next-intl)
+- **KHÔNG hardcode chuỗi UI** — luôn dùng `useTranslations()` hook
+- Default locale: `vi` — fallback: `en`
+- URL pattern: `/vi/dashboard`, `/en/dashboard`
+- Key naming: `namespace.key` — ví dụ `auth.login`, `nav.dashboard`, `claims.status.approved`
+- Server Component dùng `getTranslations()`, Client Component dùng `useTranslations()`
+- `LanguageSwitcher` component trong layout header — toggle VI ↔ EN không reload
+- Xem CONVENTIONS.md → mục i18n để biết đầy đủ pattern và key structure
 
 ### AI / LangGraph
 - State là TypedDict đầy đủ type
@@ -202,6 +217,7 @@ GET   /admin/analytics/full      Full system analytics
 - Không dùng `any` trong TypeScript
 - Không gọi Gemini Pro khi Gemini Flash đủ dùng (tiết kiệm quota)
 - Không import Leaflet ở Server Component (SSR không hỗ trợ)
+- **Không hardcode chuỗi UI** — dùng `useTranslations()` / `getTranslations()`, không viết string trực tiếp vào JSX
 
 ---
 
