@@ -25,13 +25,25 @@ export function RiskMapClient() {
   const [riskData, setRiskData] = useState<GeoRisk[]>([]);
   const [selected, setSelected] = useState<GeoRisk | null>(null);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState('');
 
   useEffect(() => {
     api.get('/geo-risk/map')
       .then((r) => setRiskData(r.data))
-      .catch(console.error)
+      .catch((err) => {
+        console.error('API error:', err);
+        setApiError('Không kết nối được API backend. Hãy chạy: uvicorn app.main:app --reload');
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  if (apiError) {
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+        {apiError}
+      </div>
+    );
+  }
 
   return (
     <div className="flex gap-4 flex-1" style={{ minHeight: 520 }}>
