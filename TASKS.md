@@ -336,7 +336,7 @@ api.interceptors.request.use((config) => {
 
 ---
 
-### TASK-009 `[AI]` Gemini Vision OCR pipeline + Cache + Confidence
+### TASK-009 `[AI]` Gemini Vision OCR pipeline + Cache + Confidence ✅
 
 **Mô tả:** Service dùng Gemini Vision để OCR tài liệu và extract structured data. Hỗ trợ CCCD, bằng lái, hộ chiếu, hợp đồng bảo hiểm. Tích hợp: (1) MD5 cache tránh gọi API lại, (2) Confidence threshold 0.7 với auto-retry, (3) Flag manual review khi confidence thấp.
 

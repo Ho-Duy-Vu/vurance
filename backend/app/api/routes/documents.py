@@ -1,6 +1,7 @@
+import base64
 import hashlib
+import logging
 import uuid
-from typing import Literal
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 
@@ -8,8 +9,10 @@ from app.api.deps import get_current_user
 from app.core.rate_limit import limiter
 from app.models.document import Document
 from app.models.user import User
-from app.schemas.document import DocumentResponse, DocumentUploadResponse
+from app.schemas.document import DocumentOCRResponse, DocumentResponse, DocumentUploadResponse
 from app.services.storage import ensure_bucket, get_presigned_url, upload_file
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -68,6 +71,14 @@ async def upload_document(
     )
     await doc.insert()
 
+    # Trigger async OCR via Celery
+    try:
+        from app.tasks.document_processor import process_document
+        process_document.delay(str(doc.id), base64.b64encode(file_bytes).decode(), doc_type)
+        logger.info("Queued OCR task for document %s", doc.id)
+    except Exception as e:
+        logger.warning("Celery unavailable, OCR skipped: %s", e)
+
     presigned_url = get_presigned_url(file_key)
 
     return DocumentUploadResponse(
@@ -109,3 +120,71 @@ async def get_download_url(
     if not doc or doc.user_id != str(current_user.id):
         raise HTTPException(404, "Document not found")
     return {"presigned_url": get_presigned_url(doc.file_key)}
+
+
+@router.get("/{document_id}/ocr", response_model=DocumentOCRResponse)
+async def get_ocr_result(
+    document_id: str,
+    current_user: User = Depends(get_current_user),
+) -> DocumentOCRResponse:
+    doc = await Document.get(document_id)
+    if not doc or doc.user_id != str(current_user.id):
+        raise HTTPException(404, "Document not found")
+    return DocumentOCRResponse(
+        document_id=str(doc.id),
+        processing_status=doc.processing_status,
+        structured_data=doc.structured_data,
+        ocr_confidence=doc.ocr_confidence,
+        needs_manual_review=doc.needs_manual_review,
+        low_confidence_fields=doc.low_confidence_fields,
+    )
+
+
+@router.put("/{document_id}/fields")
+async def update_fields(
+    document_id: str,
+    fields: dict,
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    from datetime import datetime
+    doc = await Document.get(document_id)
+    if not doc or doc.user_id != str(current_user.id):
+        raise HTTPException(404, "Document not found")
+
+    doc.edit_history.append({
+        "version": doc.version,
+        "changed_at": datetime.utcnow().isoformat(),
+        "fields": {k: doc.structured_data.get(k) for k in fields},
+    })
+    doc.structured_data.update(fields)
+    doc.version += 1
+    doc.updated_at = datetime.utcnow()
+    await doc.save()
+    return {"ok": True, "version": doc.version}
+
+
+@router.get("/{document_id}/export")
+async def export_document(
+    document_id: str,
+    fmt: str = "json",
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    import json
+    doc = await Document.get(document_id)
+    if not doc or doc.user_id != str(current_user.id):
+        raise HTTPException(404, "Document not found")
+
+    if fmt == "markdown":
+        lines = [f"# {doc.doc_type.upper()} — {doc.file_name}\n"]
+        for key, val in doc.structured_data.items():
+            if key == "overall_confidence":
+                continue
+            value = val.get("value") if isinstance(val, dict) else val
+            conf = val.get("confidence") if isinstance(val, dict) else None
+            line = f"- **{key}**: {value}"
+            if conf is not None:
+                line += f" _(confidence: {conf:.0%})_"
+            lines.append(line)
+        return {"format": "markdown", "content": "\n".join(lines)}
+
+    return {"format": "json", "content": json.dumps(doc.structured_data, ensure_ascii=False, indent=2)}

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -27,7 +28,7 @@ class DocumentResponse(BaseModel):
     updated_at: datetime
 
     @classmethod
-    def from_doc(cls, doc) -> "DocumentResponse":
+    def from_doc(cls, doc) -> "DocumentResponse":  # noqa: ANN001
         return cls(
             document_id=str(doc.id),
             file_name=doc.file_name,
@@ -41,3 +42,12 @@ class DocumentResponse(BaseModel):
             created_at=doc.created_at,
             updated_at=doc.updated_at,
         )
+
+
+class DocumentOCRResponse(BaseModel):
+    document_id: str
+    processing_status: str
+    structured_data: dict[str, Any]
+    ocr_confidence: float | None
+    needs_manual_review: bool
+    low_confidence_fields: list[str]
